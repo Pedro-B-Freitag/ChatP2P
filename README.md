@@ -54,4 +54,54 @@ dotnet run --project . -- --porta 9003 --apelido carol --pares 127.0.0.1:9001,12
 - `/msg apelido texto` — envia uma mensagem privada diretamente ao destinatário.
 - `/quit` — sai anunciando a saída aos demais participantes.
 
+## Rodando com Docker
+
+Não precisa ter o .NET 10 instalado pra rodar — só Docker. Tem um `docker-compose.yml` que já sobe
+3 participantes (`alice`, `bob`, `carol`), cada um no seu próprio container, numa rede Docker só
+deles. Aqui a malha é "de verdade": cada container tem seu próprio IP, e um participante acha o
+outro pelo nome do container (`alice`, `bob`, `carol`) em vez de `127.0.0.1:porta` — o Docker resolve
+esses nomes automaticamente.
+
+Suba os três:
+
+```bash
+docker compose up -d --build
+```
+
+Confira que a malha se formou (cada um deve ter reconhecido os outros dois):
+
+```bash
+docker compose logs
+```
+
+Pra digitar mensagens em algum deles, conecte no console dele (graças ao TTY e o stdin_open pra digitar):
+
+```bash
+docker attach chatp2p-alice
+```
+
+Digite mensagens, `/list`, `/msg bob oi` etc. normalmente. Pra sair do `attach` **sem** matar o
+container, use `Ctrl+P` seguido de `Ctrl+Q` (desconecta o terminal, mas o processo continua rodando
+lá dentro). Se apertar `Ctrl+C`, você mata o processo do container de verdade — bom até pra testar o
+requisito de queda abrupta (os outros dois devem detectar e remover o `alice` da lista sozinhos).
+
+Repita o `docker attach` em outro terminal pra cada participante que quiser controlar
+(`chatp2p-bob`, `chatp2p-carol`).
+
+Pra derrubar tudo no final:
+
+```bash
+docker compose down
+```
+
+Quer testar queda abrupta sem precisar de terminal aberto? Dá pra matar um participante de fora,
+simulando uma queda real de processo:
+
+```bash
+docker kill chatp2p-carol
+```
+
+Os outros dois devem detectar a queda e imprimir `[-] carol saiu (conexão perdida)` em poucos
+segundos.
+
 
