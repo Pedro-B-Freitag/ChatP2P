@@ -7,5 +7,6 @@ public enum TipoDeMensagem
     Privada,
     Ping,
     Pong,
-    Saida
+    Saida,
+    ListaDePares
 }
