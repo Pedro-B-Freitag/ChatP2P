@@ -71,6 +71,9 @@ public sealed class NoDeChat
         byte[] envelope = Envelope.SaidaNova(_opcoes.Apelido).ParaBytes();
         IReadOnlyCollection<ConexaoComPar> pares = _registro.Todas();
 
+        foreach (ConexaoComPar par in pares)
+            par.MarcarComoEncerrada();
+
         await Task.WhenAll(pares.Select(async par =>
         {
             try
