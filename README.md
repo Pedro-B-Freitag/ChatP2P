@@ -49,9 +49,9 @@ dotnet run --project . -- --config pares.exemplo.json
 Para testar localmente, abra 3 terminais e rode, por exemplo:
 
 ```bash
-dotnet run --project . -- --porta 9001 --apelido alice --pares 127.0.0.1:9002,127.0.0.1:9003
-dotnet run --project . -- --porta 9002 --apelido bob   --pares 127.0.0.1:9001,127.0.0.1:9003
-dotnet run --project . -- --porta 9003 --apelido carol --pares 127.0.0.1:9001,127.0.0.1:9002
+dotnet run --project . -- --porta 9001 --apelido alice --pares 127.0.0.1:9002
+dotnet run --project . -- --porta 9002 --apelido bob 
+dotnet run --project . -- --porta 9003 --apelido carol --pares 127.0.0.1:9001
 ```
 
 ### Comandos

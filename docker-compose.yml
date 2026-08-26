@@ -39,9 +39,21 @@ services:
     hostname: samuel
     command: ["--porta", "5000", "--apelido", "samuel", "--pares", "172.28.0.13:5000"] 
     tty: true
+    stdin_open: true
     networks:
       chatnet:
         ipv4_address: 172.28.0.14
+
+  gabriel:
+    image: chatp2p:latest
+    container_name: chatp2p-gabriel
+    hostname: gabriel
+    command: ["--porta", "5000", "--apelido", "gabriel", "--pares", "172.28.0.14:5000"] 
+    tty: true
+    stdin_open: true
+    networks:
+      chatnet:
+        ipv4_address: 172.28.0.15
 
 
 networks:
