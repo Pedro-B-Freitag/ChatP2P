@@ -4,30 +4,49 @@ services:
     image: chatp2p:latest
     container_name: chatp2p-alice
     hostname: alice
-    command: ["--porta", "5000", "--apelido", "alice", "--pares", "bob:5000,carol:5000"] # Como to usando uma rede com hostname nao preicsa de localhost e portas diferentes (tipo DNS)
+    command: ["--porta", "5000", "--apelido", "alice", "--pares", "172.28.0.12:5000"] 
     stdin_open: true
     tty: true
-    networks: [chatnet]
+    networks:
+      chatnet:
+        ipv4_address: 172.28.0.11
 
   bob:
     image: chatp2p:latest
     container_name: chatp2p-bob
     hostname: bob
-    command: ["--porta", "5000", "--apelido", "bob", "--pares", "alice:5000,carol:5000"]
+    command: ["--porta", "5000", "--apelido", "bob", "--pares", "172.28.0.13:5000"]
     stdin_open: true
     tty: true
-    networks: [chatnet]
+    networks:
+      chatnet:
+        ipv4_address: 172.28.0.12
 
   carol:
     image: chatp2p:latest
     container_name: chatp2p-carol
     hostname: carol
-    command: ["--porta", "5000", "--apelido", "carol", "--pares", "alice:5000,bob:5000"]
+    command: ["--porta", "5000", "--apelido", "carol" ] 
     stdin_open: true
     tty: true
-    networks: [chatnet]
+    networks:
+      chatnet:
+        ipv4_address: 172.28.0.13
 
-# A ideia aqui é criar uma rede para que os containers possam se comunicar entre si usando hostnames, sem precisar de portas diferentes ou localhost (IP).
+  samuel:
+    image: chatp2p:latest
+    container_name: chatp2p-samuel
+    hostname: samuel
+    command: ["--porta", "5000", "--apelido", "samuel", "--pares", "172.28.0.13:5000"] 
+    tty: true
+    networks:
+      chatnet:
+        ipv4_address: 172.28.0.14
+
+
 networks:
   chatnet:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24

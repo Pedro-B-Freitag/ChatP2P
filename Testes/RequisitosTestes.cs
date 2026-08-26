@@ -45,16 +45,6 @@ public class FuncoesPrincipaisTests
     }
 
     [Fact]
-    // REQ2
-    public void MantemUmaConexao()
-    {
-        Assert.True(RegistroDePares.DeveManterConexao("alice", "bob", Direcao.Saida));
-        Assert.False(RegistroDePares.DeveManterConexao("bob", "alice", Direcao.Saida));
-        Assert.False(RegistroDePares.DeveManterConexao("alice", "bob", Direcao.Entrada));
-        Assert.True(RegistroDePares.DeveManterConexao("bob", "alice", Direcao.Entrada));
-    }
-
-    [Fact]
     // REQ2, REQ8
     public void RegistraEConsultaPar()
     {

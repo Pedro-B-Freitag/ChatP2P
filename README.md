@@ -18,6 +18,13 @@ cliente (disca para os pares conhecidos). Não existe nó coordenador nem reposi
 lista de participantes: cada nó mantém sua própria visão em `Pares.RegistroDePares`, construída só
 a partir da configuração recebida e das conexões que ele mesmo estabelece ou aceita.
 
+A configuração de cada nó não precisa listar todos os demais participantes — só um vizinho já
+basta. Ao se conectar a um par, cada nó troca com ele um envelope `ListaDePares` anunciando os
+endereços que já conhece; quem recebe passa a discar também para os endereços novos. Assim a
+malha completa se forma por difusão entre os próprios nós (A conhece só B, B conhece só C ⇒ B
+apresenta C a A), sem eleger nenhum nó como diretório central — cada um só repassa o que aprendeu
+pelas conexões que já tem.
+
 Quando dois nós têm um ao outro na lista de pares, cada um dispara uma conexão de saída para o
 outro — o que resultaria em duas conexões TCP redundantes para o mesmo par. Isso é resolvido por
 uma regra determinística (o apelido menor sempre disca, o maior sempre aceita), explicada em
@@ -56,11 +63,6 @@ dotnet run --project . -- --porta 9003 --apelido carol --pares 127.0.0.1:9001,12
 
 ## Rodando com Docker
 
-Não precisa ter o .NET 10 instalado pra rodar — só Docker. Tem um `docker-compose.yml` que já sobe
-3 participantes (`alice`, `bob`, `carol`), cada um no seu próprio container, numa rede Docker só
-deles. Aqui a malha é "de verdade": cada container tem seu próprio IP, e um participante acha o
-outro pelo nome do container (`alice`, `bob`, `carol`) em vez de `127.0.0.1:porta` — o Docker resolve
-esses nomes automaticamente.
 
 Builda a imagem uma vez (só precisa repetir se mudar o código):
 
@@ -68,13 +70,14 @@ Builda a imagem uma vez (só precisa repetir se mudar o código):
 docker compose build
 ```
 
-Suba os três:
+Suba os quatro:
 
 ```bash
 docker compose up -d
 ```
 
-Confira que a malha se formou (cada um deve ter reconhecido os outros dois):
+Confira que a malha se formou (cada um deve ter reconhecido os outros três, mesmo os que não
+estavam na sua config original):
 
 ```bash
 docker compose logs
