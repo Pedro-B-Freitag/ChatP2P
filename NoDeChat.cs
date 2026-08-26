@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using ChatP2P.Configuracao;
@@ -19,6 +20,7 @@ public sealed class NoDeChat
 
     private readonly OpcoesDoNo _opcoes;
     private readonly RegistroDePares _registro = new();
+    private readonly ConcurrentDictionary<string, byte> _enderecosConhecidos = new(StringComparer.OrdinalIgnoreCase);
     private readonly Socket _ouvinte;
     private readonly CancellationTokenSource _ctsRaiz = new();
 
@@ -26,11 +28,16 @@ public sealed class NoDeChat
     {
         _opcoes = opcoes;
         _ouvinte = Conexao.CriarOuvinte(opcoes.Porta);
+
+        foreach (ParConhecido par in opcoes.Pares)
+            _enderecosConhecidos.TryAdd($"{par.Host}:{par.Porta}", 0);
     }
+
+    public int Porta => ((IPEndPoint)_ouvinte.LocalEndPoint!).Port;
 
     public void Iniciar()
     {
-        Console.WriteLine($"== {_opcoes.Apelido} on-line, escutando na porta {_opcoes.Porta} ==");
+        Console.WriteLine($"== {_opcoes.Apelido} on-line, escutando na porta {Porta} ==");
         Console.WriteLine("   digite uma mensagem para transmitir | /list | /msg apelido texto | /quit");
 
         _ = LacoDeAceitacaoAsync(_ctsRaiz.Token);
@@ -124,15 +131,18 @@ public sealed class NoDeChat
 
         while (!ct.IsCancellationRequested)
         {
-            foreach (ParConhecido par in _opcoes.Pares)
+            foreach (string endereco in _enderecosConhecidos.Keys)
             {
-                string endereco = $"{par.Host}:{par.Porta}";
                 if (_registro.Todas().Any(c => c.EnderecoRemoto == endereco))
+                    continue;
+
+                string[] partes = endereco.Split(':', 2);
+                if (partes.Length != 2 || !int.TryParse(partes[1], out int porta))
                     continue;
 
                 try
                 {
-                    Socket socket = await Conexao.ConectarAsync(par.Host, par.Porta, TimeoutConexao, ct);
+                    Socket socket = await Conexao.ConectarAsync(partes[0], porta, TimeoutConexao, ct);
                     jaAvisados.Remove(endereco);
                     _ = TratarNovaConexaoAsync(socket, Direcao.Saida, endereco);
                 }
@@ -175,12 +185,6 @@ public sealed class NoDeChat
             return;
         }
 
-        if (!RegistroDePares.DeveManterConexao(_opcoes.Apelido, apelidoRemoto, direcao))
-        {
-            socket.Dispose();
-            return;
-        }
-
         string enderecoRemoto = enderecoConhecido
             ?? $"{((IPEndPoint)socket.RemoteEndPoint!).Address}:{portaRemota}";
 
@@ -198,6 +202,7 @@ public sealed class NoDeChat
             await EncerrarSilenciosamenteAsync(antiga);
 
         Console.WriteLine($"[+] {apelidoRemoto} entrou. Participantes: {_registro.Todas().Count}");
+        AnunciarEntradaDoPar(conexao);
 
         Task envioTask = LacoDeEnvioAsync(conexao);
         Task recebimentoTask = LacoDeRecebimentoAsync(conexao);
@@ -207,12 +212,32 @@ public sealed class NoDeChat
         await TratarSaidaDoParAsync(conexao, "conexão perdida");
     }
 
+    private void AnunciarEntradaDoPar(ConexaoComPar novaConexao)
+    {
+        _enderecosConhecidos.TryAdd(novaConexao.EnderecoRemoto, 0);
+
+        IReadOnlyCollection<ConexaoComPar> pares = _registro.Todas();
+
+        List<string> enderecosParaNovo = pares
+            .Where(par => par != novaConexao)
+            .Select(par => par.EnderecoRemoto)
+            .ToList();
+
+        if (enderecosParaNovo.Count > 0)
+            novaConexao.CanalDeSaida.Writer.TryWrite(Envelope.ListaDeParesNova(_opcoes.Apelido, enderecosParaNovo).ParaBytes());
+
+        byte[] anuncioParaDemais = Envelope.ListaDeParesNova(_opcoes.Apelido, [novaConexao.EnderecoRemoto]).ParaBytes();
+        foreach (ConexaoComPar par in pares)
+            if (par != novaConexao)
+                par.CanalDeSaida.Writer.TryWrite(anuncioParaDemais);
+    }
+
     private async Task<(string ApelidoRemoto, int PortaDeEscuta)> RealizarHandshakeAsync(Socket socket)
     {
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(_ctsRaiz.Token);
         cts.CancelAfter(TimeoutHandshake);
 
-        await Quadros.EscreverAsync(socket, Envelope.Ola(_opcoes.Apelido, _opcoes.Porta).ParaBytes(), cts.Token);
+        await Quadros.EscreverAsync(socket, Envelope.Ola(_opcoes.Apelido, Porta).ParaBytes(), cts.Token);
 
         byte[] quadro = await Quadros.LerAsync(socket, cts.Token)
             ?? throw new EndOfStreamException("par encerrou antes do handshake");
@@ -304,6 +329,11 @@ public sealed class NoDeChat
 
             case TipoDeMensagem.Saida:
                 return TratarSaidaDoParAsync(conexao, "saiu do chat");
+
+            case TipoDeMensagem.ListaDePares:
+                foreach (string endereco in envelope.Enderecos ?? [])
+                    _enderecosConhecidos.TryAdd(endereco, 0);
+                break;
 
             case TipoDeMensagem.Ola:
                 break;

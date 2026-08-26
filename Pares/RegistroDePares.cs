@@ -6,12 +6,6 @@ public sealed class RegistroDePares
 {
     private readonly ConcurrentDictionary<string, ConexaoComPar> _pares = new(StringComparer.OrdinalIgnoreCase);
 
-    public static bool DeveManterConexao(string meuApelido, string apelidoRemoto, Direcao direcao)
-    {
-        bool euDevoDiscar = StringComparer.OrdinalIgnoreCase.Compare(meuApelido, apelidoRemoto) < 0;
-        return direcao == Direcao.Saida ? euDevoDiscar : !euDevoDiscar;
-    }
-
     public ConexaoComPar? SubstituirERetornarAntiga(ConexaoComPar conexao)
     {
         ConexaoComPar antiga = _pares.GetOrAdd(conexao.ApelidoRemoto, conexao);
