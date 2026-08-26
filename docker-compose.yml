@@ -1,6 +1,7 @@
 services:
   alice:
     build: .
+    image: chatp2p:latest
     container_name: chatp2p-alice
     hostname: alice
     command: ["--porta", "5000", "--apelido", "alice", "--pares", "bob:5000,carol:5000"] # Como to usando uma rede com hostname nao preicsa de localhost e portas diferentes (tipo DNS)
@@ -9,7 +10,7 @@ services:
     networks: [chatnet]
 
   bob:
-    build: .
+    image: chatp2p:latest
     container_name: chatp2p-bob
     hostname: bob
     command: ["--porta", "5000", "--apelido", "bob", "--pares", "alice:5000,carol:5000"]
@@ -18,7 +19,7 @@ services:
     networks: [chatnet]
 
   carol:
-    build: .
+    image: chatp2p:latest
     container_name: chatp2p-carol
     hostname: carol
     command: ["--porta", "5000", "--apelido", "carol", "--pares", "alice:5000,bob:5000"]

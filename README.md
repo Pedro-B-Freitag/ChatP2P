@@ -62,10 +62,16 @@ deles. Aqui a malha é "de verdade": cada container tem seu próprio IP, e um pa
 outro pelo nome do container (`alice`, `bob`, `carol`) em vez de `127.0.0.1:porta` — o Docker resolve
 esses nomes automaticamente.
 
+Builda a imagem uma vez (só precisa repetir se mudar o código):
+
+```bash
+docker compose build
+```
+
 Suba os três:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Confira que a malha se formou (cada um deve ter reconhecido os outros dois):
